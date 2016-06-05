@@ -238,7 +238,7 @@ repeat
       fpioctl(scrfh,setvinfo,p);
       p2:=fpmmap(nil,1920*2400*4,prot_read or prot_write,map_shared,scrfh,0);
       for i:=0 to 1920*2400-1 do (p2+i)^:=$FFFF;
-      scrconvert:=@scrconvert48f;
+      scrconvert:=@scrconvert16f;
       fullscreen:=1;
       poke($70006,0);
       poke($70007,0);
@@ -255,7 +255,7 @@ repeat
       p2:=nil;
       scr:=SDL_SetVideoMode(960, 600, 32, SDL_SWSURFACE);
       sdl_sound_init;
-      scrconvert:=@scrconvert48;
+      scrconvert:=@scrconvert16;
       poke($70006,0);
       poke($70007,0);
       sdl_pauseaudio(0);

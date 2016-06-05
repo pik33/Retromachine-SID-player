@@ -46,6 +46,14 @@
 // 18010 - 1801F   - sprite control long 0 31..16 y pos  15..0 x pos
 //                               long 1 30..16 y zoom 15..0 x zoom 31 mode
 
+// planned retromachine graphic modes: 00..15 Propeller retromachine compatible
+// 16 - 1792x1120 @ 8bpp
+// 17 - 896x560 @ 8 bpp
+// 18 - 448x280 @ 8 bpp
+// 19 - 224x140 @ 8 bpp
+// 20..23 - 16 bpp modes
+// 24..27 - 32 bpp modes
+// 28 ..31 text modes - ?
 
 // This is still alpha quality code
 
@@ -121,8 +129,8 @@ var fh,filetype:integer;                // this needs cleaning...
 
 procedure initmachine(mode:integer);
 procedure stopmachine;
-procedure scrconvert48(screen:pointer);
-procedure scrconvert48f(screen:pointer);
+procedure scrconvert16(screen:pointer);
+procedure scrconvert16f(screen:pointer);
 procedure setataripallette(bank:integer);
 procedure cls(c:integer);
 procedure putpixel(x,y,color:integer);
@@ -311,7 +319,7 @@ if mode=0 then
   SDL_EnableKeyRepeat(200,50);
   sdl_sound_init;
   sdl_showcursor(0);
-  scrconvert:=@scrconvert48;
+  scrconvert:=@scrconvert16;
   end
 
 else
@@ -334,7 +342,7 @@ else
   fpioctl(scrfh,setvinfo,p);
   p2:=fpmmap(nil,1920*2400*4,prot_read or prot_write,map_shared,scrfh,0);
   for i:=0 to 1920*2400-1 do (p2+i)^:=$0000;
-  scrconvert:=@scrconvert48f;
+  scrconvert:=@scrconvert16f;
   end;
 
 r1:=fpmmap (nil,33554432,prot_read or prot_write or prot_exec,map_shared or map_anonymous,-1,0);
@@ -541,106 +549,230 @@ else
 end;
 
 
-procedure scrconvert48f(screen:pointer);  //convert retro fb to raspberry fb @ graphics mode 48
-                                          //1792x1120x256
+ procedure scrconvert16f(screen:pointer);  //convert retro fb to raspberry fb @ graphics mode 16
+                                           //1792x1120x256
+
+ // todo: one screen convert procedure with display list
+
+ var a:pointer;
+     e:integer;
+
+ label p1,p0,p002,p10,p11,p12,p20,p21,p22,p100,p101,p102,p103,p104,p999;
+
+ begin
+ a:=ramb;
+ e:=raml^[$18003];
+
+                 asm
+                 stmfd r13!,{r0-r12}   //Push registers
+                 ldr r1,a
+                 add r1,#0x1000000
+                 mov r6,r1
+                 add r6,#1
+                 ldr r2,screen
+                 mov r12,r2
+                 add r12,#4
+                 ldr r3,a
+                 add r3,#0x10000
+                 mov r5,r2
+                                     //upper border
+                 add r5,#307200
+                 ldr r9,e
+                 mov r10,r9
+ p10:            str r9,[r2],#8
+                 str r10,[r12],#8
+                 str r9,[r2],#8
+                 str r10,[r12],#8
+                 cmp r2,r5
+                 blt p10
+                 mov r0,#1120
+                                     //left border
+ p11:            add r5,#256
+                 ldr r9,e
+                 mov r10,r9
+ p0:             str r9,[r2],#8
+                 str r10,[r12],#8
+                 str r9,[r2],#8
+                 str r10,[r12],#8
+                 cmp r2,r5
+                 blt p0
+                                     //active screen
+                 add r5,#7168
+ p1:             ldrb r7,[r1],#2
+                 ldrb r8,[r6],#2
+                 ldr r9,[r3,r7,lsl #2]
+                 ldr r10,[r3,r8,lsl #2]
+                 str r9,[r2],#8
+                 str r10,[r12],#8
+                 ldrb r7,[r1],#2
+                 ldrb r8,[r6],#2
+                 ldr r9,[r3,r7,lsl #2]
+                 ldr r10,[r3,r8,lsl #2]
+                 str r9,[r2],#8
+                 str r10,[r12],#8
+                 ldrb r7,[r1],#2
+                 ldrb r8,[r6],#2
+                 ldr r9,[r3,r7,lsl #2]
+                 ldr r10,[r3,r8,lsl #2]
+                 str r9,[r2],#8
+                 str r10,[r12],#8
+                 ldrb r7,[r1],#2
+                 ldrb r8,[r6],#2
+                 ldr r9,[r3,r7,lsl #2]
+                 ldr r10,[r3,r8,lsl #2]
+                 str r9,[r2],#8
+                 str r10,[r12],#8
+                 cmp r2,r5
+                 blt p1
+                                   //right border
+                 add r5,#256
+                 ldr r9,e
+                 mov r10,r9
+ p002:           str r9,[r2],#8
+                 str r10,[r12],#8
+                 str r9,[r2],#8
+                 str r10,[r12],#8
+                 cmp r2,r5
+                 blt p002
+                 subs r0,#1
+                 bne p11
+                                   //lower border
+                 add r5,#307200
+                 ldr r9,e
+                 mov r10,r9
+ p12:            str r9,[r2],#8
+                 str r10,[r12],#8
+                 str r9,[r2],#8
+                 str r10,[r12],#8
+                 cmp r2,r5
+                 blt p12
+ p999:           ldmfd r13!,{r0-r12}
+                 end;
+ end;
+
+procedure scrconvert20f(screen:pointer);  // convert retro fb to raspberry fb @ graphics mode 20
+                                          // 1792x1120x64k
 var a:pointer;
-    e:integer;
+    e:pointer;
+    buf:integer;
 
 label p1,p0,p002,p10,p11,p12,p20,p21,p22,p100,p101,p102,p103,p104,p999;
 
 begin
 a:=ramb;
-e:=raml^[$18003];
+e:=@raml^[$18003];
+buf:=$1000000;  //todo: buf as parameter
 
-                asm
-                stmfd r13!,{r0-r12}   //Push registers
-                ldr r1,a
-                add r1,#0x1000000
-                mov r6,r1
-                add r6,#1
-                ldr r2,screen
-                mov r12,r2
-                add r12,#4
-                ldr r3,a
-                add r3,#0x10000
-                mov r5,r2
-                                    //upper border
-                add r5,#307200
-                ldr r9,e
-                mov r10,r9
-p10:            str r9,[r2],#8
-                str r10,[r12],#8
-                str r9,[r2],#8
-                str r10,[r12],#8
-                cmp r2,r5
-                blt p10
-                mov r0,#1120
-                                    //left border
-p11:            add r5,#256
-                ldr r9,e
-                mov r10,r9
-p0:             str r9,[r2],#8
-                str r10,[r12],#8
-                str r9,[r2],#8
-                str r10,[r12],#8
-                cmp r2,r5
-                blt p0
-                                    //active screen
-                add r5,#7168
-p1:             ldrb r7,[r1],#2
-                ldrb r8,[r6],#2
-                ldr r9,[r3,r7,lsl #2]
-                ldr r10,[r3,r8,lsl #2]
-                str r9,[r2],#8
-                str r10,[r12],#8
-                ldrb r7,[r1],#2
-                ldrb r8,[r6],#2
-                ldr r9,[r3,r7,lsl #2]
-                ldr r10,[r3,r8,lsl #2]
-                str r9,[r2],#8
-                str r10,[r12],#8
-                ldrb r7,[r1],#2
-                ldrb r8,[r6],#2
-                ldr r9,[r3,r7,lsl #2]
-                ldr r10,[r3,r8,lsl #2]
-                str r9,[r2],#8
-                str r10,[r12],#8
-                ldrb r7,[r1],#2
-                ldrb r8,[r6],#2
-                ldr r9,[r3,r7,lsl #2]
-                ldr r10,[r3,r8,lsl #2]
-                str r9,[r2],#8
-                str r10,[r12],#8
-                cmp r2,r5
-                blt p1
-                                  //right border
-                add r5,#256
-                ldr r9,e
-                mov r10,r9
-p002:           str r9,[r2],#8
-                str r10,[r12],#8
-                str r9,[r2],#8
-                str r10,[r12],#8
-                cmp r2,r5
-                blt p002
-                subs r0,#1
-                bne p11
-                                  //lower border
-                add r5,#307200
-                ldr r9,e
-                mov r10,r9
-p12:            str r9,[r2],#8
-                str r10,[r12],#8
-                str r9,[r2],#8
-                str r10,[r12],#8
-                cmp r2,r5
-                blt p12
-p999:           ldmfd r13!,{r0-r12}
-                end;
+                 asm
+                 stmfd r13!,{r0-r12}   //Push registers
+                 ldr r1,a
+                 ldr r2,buf
+                 add r1,r2
+                 mov r6,r1
+                 add r6,#2
+                 ldr r2,screen
+                 mov r12,r2
+                 add r12,#4
+                 ldr r3,a
+                 add r3,#0x10000
+                 mov r5,r2
+                                       //upper border
+                 add r5,#307200
+                 ldr r9,e
+                 ldr r9,[r9]
+                 mov r10,r9
+p10:             str r9,[r2],#8
+                 str r10,[r12],#8
+                 str r9,[r2],#8
+                 str r10,[r12],#8
+                 str r9,[r2],#8
+                 str r10,[r12],#8
+                 str r9,[r2],#8
+                 str r10,[r12],#8
+                 cmp r2,r5
+                 blt p10
+                 mov r0,#1120
+                                       //left border
+p11:             add r5,#256
+                 ldr r9,e
+                 ldr r9,[r9]
+                 mov r10,r9
+p0:              str r9,[r2],#8
+                 str r10,[r12],#8
+                 str r9,[r2],#8
+                 str r10,[r12],#8
+                 str r9,[r2],#8
+                 str r10,[r12],#8
+                 str r9,[r2],#8
+                 str r10,[r12],#8
+                 cmp r2,r5
+                 blt p0
+                                       //active screen
+                 add r5,#7168
+p1:              ldrh r7,[r1],#4
+                 ldrh r8,[r6],#4
+                 ldr r9,[r3,r7,lsl #2]
+                 ldr r10,[r3,r8,lsl #2]
+                 str r9,[r2],#8
+                 str r10,[r12],#8
+                 ldrh r7,[r1],#4
+                 ldrh r8,[r6],#4
+                 ldr r9,[r3,r7,lsl #2]
+                 ldr r10,[r3,r8,lsl #2]
+                 str r9,[r2],#8
+                 str r10,[r12],#8
+                 ldrh r7,[r1],#4
+                 ldrh r8,[r6],#4
+                 ldr r9,[r3,r7,lsl #2]
+                 ldr r10,[r3,r8,lsl #2]
+                 str r9,[r2],#8
+                 str r10,[r12],#8
+                 ldrh r7,[r1],#4
+                 ldrh r8,[r6],#4
+                 ldr r9,[r3,r7,lsl #2]
+                 ldr r10,[r3,r8,lsl #2]
+                 str r9,[r2],#8
+                 str r10,[r12],#8
+                 cmp r2,r5
+                 blt p1
+                                    //right border
+                 add r5,#256
+                 ldr r9,e
+                 ldr r9,[r9]
+                 mov r10,r9
+p002:            str r9,[r2],#8
+                 str r10,[r12],#8
+                 str r9,[r2],#8
+                 str r10,[r12],#8
+                 str r9,[r2],#8
+                 str r10,[r12],#8
+                 str r9,[r2],#8
+                 str r10,[r12],#8
+                 cmp r2,r5
+                 blt p002
+                 subs r0,#1
+                 bne p11
+                                    //lower border
+                 add r5,#307200
+                 ldr r9,e
+                 ldr r9,[r9]
+                 mov r10,r9
+p12:             str r9,[r2],#8
+                 str r10,[r12],#8
+                 str r9,[r2],#8
+                 str r10,[r12],#8
+                 str r9,[r2],#8
+                 str r10,[r12],#8
+                 str r9,[r2],#8
+                 str r10,[r12],#8
+                 cmp r2,r5
+                 blt p12
+p999:            ldmfd r13!,{r0-r12}
+                 end;
 end;
 
 
-procedure scrconvert48(screen:pointer);  // convert retro fb 1792x1120x256
+procedure scrconvert16(screen:pointer);  // convert retro fb 1792x1120x256
                                          // to sdl surface @960x600
 var a:pointer;
     e:integer;
