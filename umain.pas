@@ -79,7 +79,7 @@ setataripallette(1);
 setataripallette(2);
 setataripallette(3);
 cls(146);
-outtextxyz(128,16,'The retromachine player v. 0.06 --- 2016.06.03',154,4,2);
+outtextxyz(128,16,'The retromachine player v. 0.07 --- 2016.06.06',154,4,2);
 box2(8,64,1784,1112,0);
 box2(10,1062,1782,1110,120);
 outtextxyz(32,1070,'Screen time:',124,2,2);

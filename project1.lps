@@ -7,9 +7,8 @@
       <Unit0>
         <Filename Value="project1.pas"/>
         <IsPartOfProject Value="True"/>
-        <IsVisibleTab Value="True"/>
-        <TopLine Value="455"/>
-        <CursorPos Y="504"/>
+        <TopLine Value="433"/>
+        <CursorPos X="52" Y="500"/>
         <UsageCount Value="43"/>
         <Loaded Value="True"/>
       </Unit0>
@@ -36,9 +35,10 @@
       </Unit3>
       <Unit4>
         <Filename Value="umain.pas"/>
+        <IsVisibleTab Value="True"/>
         <EditorIndex Value="2"/>
-        <TopLine Value="78"/>
-        <CursorPos X="27" Y="78"/>
+        <TopLine Value="63"/>
+        <CursorPos X="66" Y="82"/>
         <UsageCount Value="18"/>
         <Loaded Value="True"/>
       </Unit4>
