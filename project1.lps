@@ -7,9 +7,10 @@
       <Unit0>
         <Filename Value="project1.pas"/>
         <IsPartOfProject Value="True"/>
-        <TopLine Value="233"/>
-        <CursorPos X="58" Y="244"/>
-        <UsageCount Value="42"/>
+        <IsVisibleTab Value="True"/>
+        <TopLine Value="455"/>
+        <CursorPos Y="504"/>
+        <UsageCount Value="43"/>
         <Loaded Value="True"/>
       </Unit0>
       <Unit1>
@@ -27,17 +28,16 @@
       </Unit2>
       <Unit3>
         <Filename Value="retromalina.pas"/>
-        <IsVisibleTab Value="True"/>
         <EditorIndex Value="3"/>
-        <TopLine Value="703"/>
-        <CursorPos X="8" Y="727"/>
+        <TopLine Value="23"/>
+        <CursorPos X="3" Y="333"/>
         <UsageCount Value="20"/>
         <Loaded Value="True"/>
       </Unit3>
       <Unit4>
         <Filename Value="umain.pas"/>
         <EditorIndex Value="2"/>
-        <TopLine Value="130"/>
+        <TopLine Value="78"/>
         <CursorPos X="27" Y="78"/>
         <UsageCount Value="18"/>
         <Loaded Value="True"/>
@@ -52,12 +52,13 @@
         <Filename Value="unit6502.pas"/>
         <UnitName Value="Unit6502"/>
         <EditorIndex Value="1"/>
+        <TopLine Value="571"/>
         <CursorPos X="73" Y="621"/>
         <UsageCount Value="15"/>
         <Loaded Value="True"/>
       </Unit6>
     </Units>
-    <JumpHistory Count="21" HistoryIndex="20">
+    <JumpHistory Count="25" HistoryIndex="24">
       <Position1>
         <Filename Value="retromalina.pas"/>
         <Caret Line="276" TopLine="266"/>
@@ -142,6 +143,22 @@
         <Filename Value="retromalina.pas"/>
         <Caret Line="772" TopLine="733"/>
       </Position21>
+      <Position22>
+        <Filename Value="retromalina.pas"/>
+        <Caret Line="66" Column="94" TopLine="55"/>
+      </Position22>
+      <Position23>
+        <Filename Value="project1.pas"/>
+        <Caret Line="516" Column="10" TopLine="482"/>
+      </Position23>
+      <Position24>
+        <Filename Value="project1.pas"/>
+        <Caret Line="220" Column="11" TopLine="200"/>
+      </Position24>
+      <Position25>
+        <Filename Value="project1.pas"/>
+        <Caret Line="218" Column="30" TopLine="193"/>
+      </Position25>
     </JumpHistory>
   </ProjectSession>
 </CONFIG>

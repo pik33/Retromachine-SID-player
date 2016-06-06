@@ -5,21 +5,8 @@ program project1;
 
 uses
   cthreads,
-   Classes, SysUtils, CustApp, FileUtil,
+   Classes, SysUtils,FileUtil,
    umain,retromalina,sdl,unit6502,baseunix;
-
-type
-
-  { TMyApplication }
-
-  TMyApplication = class(TCustomApplication)
-  protected
-    procedure DoRun; override;
-  public
-    constructor Create(TheOwner: TComponent); override;
-    destructor Destroy; override;
-    procedure WriteHelp; virtual;
-  end;
 
 var s,currentdir,currentdir2:string;
     sr:tsearchrec;
@@ -128,11 +115,9 @@ end;
 
 //------------------- The main loop
 
-procedure TMyApplication.DoRun;
-
 begin
 
-if HasOption('f', 'fullscreen') then fs:=1 else fs:=0;
+if paramstr(1)='-f' then fs:=1 else fs:=0;
 
 songtime:=0;
 pause:=false;
@@ -513,37 +498,8 @@ repeat
   until (dpeek($60028)=27) ;
   sdl_pauseaudio(1);
   for i:=0 to 100000000 do;
-  if sfh>-1 then fileclose(sfh);
+  if sfh>0 then fileclose(sfh);
   setcurrentdir(workdir);
   stopmachine;
-  // stop program loop
-  Terminate;
-end;
-
-constructor TMyApplication.Create(TheOwner: TComponent);
-begin
-  inherited Create(TheOwner);
-  StopOnException:=True;
-end;
-
-destructor TMyApplication.Destroy;
-begin
-  inherited Destroy;
-end;
-
-procedure TMyApplication.WriteHelp;
-begin
-  { add your help code here }
-  writeln('Usage: ', ExeName, ' -h');
-end;
-
-var
-  Application: TMyApplication;
-
-begin
-  Application:=TMyApplication.Create(nil);
-  Application.Title:='The Retromachine';
-  Application.Run;
-  Application.Free;
 end.
 

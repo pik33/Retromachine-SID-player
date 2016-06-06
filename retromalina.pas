@@ -69,9 +69,9 @@ type Tsrcconvert=procedure(screen:pointer);
      Ttfb=array[0..63] of integer;
      Ptfb=^Ttfb;
      Pint=^integer;
-     tram=array[0..67108863] of integer;
-     tramw=array[0..134217727]of word;
-     tramb=array[0..268435455]of byte;
+     tram=array[0..8388608] of integer;
+     tramw=array[0..16777216]of word;
+     tramb=array[0..33554432]of byte;
 
      TRetro = class(TThread)
      private
@@ -328,8 +328,9 @@ else
   scrfh:=fileopen('/dev/fb0',fmopenreadwrite);
   fpioctl(scrfh,getvinfo,p);
   tabl2:=tabl;
-  p2:=nil;                               //pointer to framebuffer memory init
+//  p2:=nil;                               //pointer to framebuffer memory init
   SDL_Init(SDL_INIT_everything);
+  SDL_putenv('SDL_VIDEO_WINDOW_POS=center');
   scr:=SDL_SetVideoMode(tabl[0], tabl[1], 32, SDL_SWSURFACE or SDL_FULLSCREEN);
   SDL_EnableKeyRepeat(200,50);
   sdl_sound_init;
@@ -391,7 +392,7 @@ else
   fileclose(scrfh);
   end;
 sdl_quit;
-fpmunmap(r1,268435456);
+fpmunmap(r1,33554432);
 end;
 
 function gettime:int64;
