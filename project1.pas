@@ -23,6 +23,7 @@ var s,currentdir,currentdir2:string;
     init:word;
     atitle,author,copyright:string[32];
     workdir:string;
+    pause:boolean=true;
 
 // ---- procedures
 
@@ -113,6 +114,72 @@ repeat
 until j=0;
 end;
 
+
+procedure dirlist(dir:string);
+
+begin
+currentdir2:=dir;
+setcurrentdir(currentdir2);
+box2(897,67,1782,115,36);
+box2(897,118,1782,1008,34);
+s:=currentdir2;
+if length(s)>55 then s:=copy(s,1,55);
+l:=length(s);
+outtextxyz(1344-8*l,75,s,44,2,2);
+ilf:=0;
+currentdir:=currentdir2+'*';
+if findfirst(currentdir,fadirectory,sr)=0 then
+  repeat
+  if (sr.attr and faDirectory) = faDirectory then
+    begin
+    filenames[ilf,0]:=sr.name;
+    filenames[ilf,1]:='[DIR]';
+    ilf+=1;
+    end;
+  until (findnext(sr)<>0) or (ilf=1000);
+sysutils.findclose(sr);
+
+currentdir:=currentdir2+'*.sid';
+if findfirst(currentdir,faAnyFile,sr)=0 then
+  repeat
+  filenames[ilf,0]:=sr.name;
+  filenames[ilf,1]:='';
+  ilf+=1;
+  until (findnext(sr)<>0) or (ilf=1000);
+sysutils.findclose(sr);
+
+currentdir:=currentdir2+'*.dmp';
+if findfirst(currentdir,faAnyFile,sr)=0 then
+  repeat
+  filenames[ilf,0]:=sr.name;
+  filenames[ilf,1]:='';
+  ilf+=1;
+  until (findnext(sr)<>0) or (ilf=1000);
+sysutils.findclose(sr);
+sort;
+
+box(920,132,840,32,36);
+if ilf<26 then ild:=ilf-1 else ild:=26;
+for i:=0 to ild do
+  begin
+  if filenames[i,1]='' then l:=length(filenames[i,0])-4 else  l:=length(filenames[i,0]);
+  if filenames[i,1]='' then  s:=copy(filenames[i,0],1,length(filenames[i,0])-4) else s:=filenames[i,0];
+  if length(s)>40 then begin s:=copy(s,1,40); l:=40; end;
+  for j:=1 to length(s) do if s[j]='_' then s[j]:=' ';
+  if filenames[i,1]='' then outtextxyz(1344-8*l,132+32*i,s,44,2,2);
+  if filenames[i,1]='[DIR]' then begin outtextxyz(1344-8*l,132+32*i,s,44,2,2);  outtextxyz(1672,132+32*i,'[DIR]',44,2,2);   end;
+  end;
+sel:=0; selstart:=0;
+box2(897,67,1782,115,36);
+s:=currentdir2;
+if length(s)>55 then s:=copy(s,1,55);
+l:=length(s);
+outtextxyz(1344-8*l,75,s,44,2,2);
+
+end;
+
+
+
 //------------------- The main loop
 
 begin
@@ -120,7 +187,7 @@ begin
 if paramstr(1)='-f' then fs:=1 else fs:=0;
 
 songtime:=0;
-pause:=false;
+pause:=true;
 siddelay:=20000;
 setcurrentdir(workdir);
 initmachine(fs);
@@ -130,6 +197,8 @@ poke($70007,0);
 poke($70008,1);
 lpoke($6000c,$002040);
 main1;
+dirlist('/home/pi/');
+      {
 currentdir2:='/home/pi/';
 setcurrentdir(currentdir2);
 box2(897,67,1782,115,36);
@@ -181,7 +250,7 @@ for i:=0 to ild do
   if filenames[i,1]='' then outtextxyz(1344-8*l,132+32*i,s,44,2,2);
   if filenames[i,1]='[DIR]' then begin outtextxyz(1344-8*l,132+32*i,s,44,2,2);  outtextxyz(1672,132+32*i,'[DIR]',44,2,2);   end;
   end;
-
+ }
 poke($70003,1);
 poke($70004,1);
 poke($70005,1);
@@ -361,6 +430,8 @@ repeat
       dpoke($60028,0);
       if filenames[sel+selstart,1]='[DIR]' then
         begin
+        dirlist(currentdir2+filenames[sel+selstart,0]+'/'); {
+
         box2(897,118,1782,1008,34);
         s:=filenames[sel+selstart,0];
         if copy(s,length(s),1)<>'\' then
@@ -426,13 +497,16 @@ repeat
         s:=currentdir2;
         if length(s)>55 then s:=copy(s,1,55);
         l:=length(s);
-        outtextxyz(1344-8*l,75,s,44,2,2);
+        outtextxyz(1344-8*l,75,s,44,2,2);                }
         end
 
       else
 
-        begin
-        sdl_pauseaudio(1);
+        begin if not pause then
+          begin
+          pause:=true;
+          sdl_pauseaudio(1);
+          end;
         for i:=0 to 20000000 do begin end;
         for i:=0 to $2F do siddata[i]:=0;
         for i:=$50 to $7F do siddata[i]:=0;
@@ -492,7 +566,7 @@ repeat
         songname:=s;
         songtime:=0;
         timer1:=-1;
-        if filetype<>2 then sdl_pauseaudio(0);
+        if filetype<>2 then begin pause:=false; sdl_pauseaudio(0); end;
         end;
     end;
   until (dpeek($60028)=27) ;

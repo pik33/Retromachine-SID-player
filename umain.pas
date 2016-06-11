@@ -23,7 +23,7 @@ var test:integer ;
     avsid:int64=0;
     av6502:int64=0;
     qq:integer;
-    pause:boolean=false;
+ //   pause:boolean=false;
 
 procedure main1;
 procedure main2;
