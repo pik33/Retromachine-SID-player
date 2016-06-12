@@ -24,7 +24,6 @@
     <RunParams>
       <local>
         <FormatVersion Value="1"/>
-        <CommandLineParams Value="-f"/>
       </local>
     </RunParams>
     <RequiredPackages Count="1">

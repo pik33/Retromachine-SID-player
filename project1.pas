@@ -120,6 +120,7 @@ procedure dirlist(dir:string);
 begin
 currentdir2:=dir;
 setcurrentdir(currentdir2);
+currentdir2:=getcurrentdir+'/';
 box2(897,67,1782,115,36);
 box2(897,118,1782,1008,34);
 s:=currentdir2;
