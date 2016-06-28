@@ -2174,7 +2174,7 @@ p224:          ldr r0,[r4,#0x30]
 
                //  antialias r
 
-               mov r1,#0x10000
+               mov r1,#0x8000
                ldr r2,[r7,#0x198]
                sub r0,r2
                ldr r4,[r7,#0x19c]
