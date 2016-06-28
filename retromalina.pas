@@ -1315,9 +1315,9 @@ if mode=1 then  // get regs
   siddata[$56]:=ramb^[$70003];
   siddata[$57]:=ramb^[$70004];
   siddata[$58]:=ramb^[$70005];
-  siddata[0]:=(ramb^[$D400]+256*ramb^[$d401]); //freq1
-  siddata[$10]:=ramb^[$d407]+256*ramb^[$d408];
-  siddata[$20]:=ramb^[$d40e]+256*ramb^[$d40f];
+  siddata[0]:=round(1.0263*(16*ramb^[$D400]+4096*ramb^[$d401])); //freq1
+  siddata[$10]:=round(1.0263*(16*ramb^[$d407]+4096*ramb^[$d408]));
+  siddata[$20]:=round(1.0263*(16*ramb^[$d40e]+4096*ramb^[$d40f]));
 
   siddata[1]:=ramb^[$d404] and 1;   // gate1
   siddata[2]:=ramb^[$d404] and 4;  //ring1
@@ -1606,7 +1606,7 @@ repeat
 
                ldr   r0,[r4,#0x20]
                ldr   r3,[r4,#0x00]
-               adds  r0,r0,r3,lsl #8    // PA @ 24 higher bits
+               adds  r0,r0,r3,lsl #6//8    // PA @ 24 higher bits
                ldrcs r1,[r4,#0x60]
                ldrcs r2,[r4,#0x50]
                andcs r1,r2
@@ -1617,7 +1617,7 @@ repeat
                str r0,[r4,#0x20]
 
                ldr r2,[r4,#0x24]
-               adds r2,r2,r3,lsl #12
+               adds r2,r2,r3,lsl #10//12
                movcs r1,#1
                movcc r1,#0
                str   r2,[r4,#0x24]
@@ -1735,7 +1735,7 @@ p209:          cmp r1,#8                // noise
 
 p204:          ldr   r0,[r4,#0x60]
                ldr   r3,[r4,#0x40]
-               adds  r0,r0,r3,lsl #8    // PA @ 24 higher bits
+               adds  r0,r0,r3,lsl #6//8    // PA @ 24 higher bits
                ldrcs r1,[r4,#0xa0]
                ldrcs r2,[r4,#0x90]
                andcs r1,r2
@@ -1746,7 +1746,7 @@ p204:          ldr   r0,[r4,#0x60]
                str r0,[r4,#0x60]
 
                ldr r2, [r4,#0x64]
-               adds r2,r2,r3,lsl #12
+               adds r2,r2,r3,lsl #10//12
                movcs r1,#1
                movcc r1,#0
                str  r2,[r4,#0x64]
@@ -1866,7 +1866,7 @@ p212:          ldr r7,[r4,#0x7C]
 
 p214:          ldr   r0,[r4,#0xa0]
                ldr   r3,[r4,#0x80]
-               adds  r0,r0,r3,lsl #8    // PA @ 24 higher bits
+               adds  r0,r0,r3,lsl #6//8    // PA @ 24 higher bits
                ldrcs r1,[r4,#0x20]
                ldrcs r2,[r4,#0x10]
                andcs r1,r2
@@ -1877,7 +1877,7 @@ p214:          ldr   r0,[r4,#0xa0]
                str r0,[r4,#0xa0]
 
                ldr r2,[r4,#0xa4]
-               adds r2,r2,r3,lsl #12
+               adds r2,r2,r3,lsl #10//12
                movcs r1,#1
                movcc r1,#0
                str   r2,[r4,#0xa4]
@@ -2045,6 +2045,7 @@ p224:          ldr r0,[r4,#0x30]
                mov r7,r4
                ldr r3,[r7,#0x1bc] //fri
                ldr r1,[r7,#0x1b8] //ffi
+ lsl r1,#2
                ldr r6,[r7,#0x1b4]  // bandpass switch
                mov r9, #0  // init output L
                mov r10,#0  // init output R
@@ -2173,7 +2174,7 @@ p224:          ldr r0,[r4,#0x30]
 
                //  antialias r
 
-               mov r1,#0x4000
+               mov r1,#0x10000
                ldr r2,[r7,#0x198]
                sub r0,r2
                ldr r4,[r7,#0x19c]
@@ -2191,7 +2192,7 @@ p224:          ldr r0,[r4,#0x30]
 
                ldr r0,[r7,#0x1a8]
                ldr r8,[r7,#0x1b0]
-               cmp r0,#20
+               cmp r0,#5//20
                addlt r8,r4
                str r8,[r7,#0x1b0]
 
@@ -2215,7 +2216,7 @@ p224:          ldr r0,[r4,#0x30]
 
                ldr r0,[r7,#0x1a8]
                ldr r8,[r7,#0x1ac]
-               cmp r0,#20
+               cmps r0,#5//20
                addlt r8,r4
                str r8,[r7,#0x1ac]
                add r0,#1
@@ -2224,11 +2225,11 @@ p224:          ldr r0,[r4,#0x30]
 
                end;
 
-sidclock+=1000;
-until sidclock>20526;
-sidclock-=20526;
-sid[0]:= siddata[$6c] div 32768;
-sid[1]:=siddata[$6b] div 32768;
+sidclock+=4000;//1000;
+until sidclock>=20000;//20526;
+sidclock-=20000;//20526;
+sid[0]:= siddata[$6c] div 8192;//32768;
+sid[1]:=siddata[$6b] div 8192;//32768;
 oldsc:=sc;
 sc:=sid[0]+sid[1];
 scope[scj div 1]:=sc; inc(scj); if scj>1*959 then if (oldsc<0) and (sc>0) then scj:=0 else scj:=1*959;
