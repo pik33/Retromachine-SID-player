@@ -23,6 +23,7 @@ var test:integer ;
     avsid:int64=0;
     av6502:int64=0;
     qq:integer;
+        avsct1,avspt1,sidtime1,av65021:array[0..59] of integer;
  //   pause:boolean=false;
 
 procedure main1;
@@ -134,11 +135,12 @@ end;
 
 procedure main2;
 
-var ii,iii,il,i:integer;
+var c1,ii,iii,il,i:integer;
     buf:array[0..24] of byte;
     qqq,mm,hh,ss:int64;
     mms,hhs,sss,kwas:string;
     rect:tsdl_rect;
+
 
 begin
 
@@ -149,7 +151,7 @@ qqq:=gettime;
 if (fullscreen=0) and (peek($70006)=0) then sdl_flip(scr);
 qqq:=gettime-qqq;
 if peek($70006)=0 then sdlevents;// get events from SDL and update system variables
-c:=c+1;
+c:=c+1; c1:=c mod 60;
 if time6502>0 then c6+=1;
 ss:=(songtime div 1000000) mod 60;
 mm:=(songtime div 60000000) mod 60;
@@ -162,16 +164,28 @@ box(18,864,640,32,244);
 box(18,960,640,32,244);
 outtextxyz(18,864,songname,250,2,2);
 outtextxyz(18,960,hhs+':'+mms+':'+sss,190,4,2);
-avsct:=avsct+tim;
-avspt:=avspt+ts;
-avall:=avall+t3;
-av6502:=av6502+time6502;
+//avsct:=avsct+tim;
+//avspt:=avspt+ts;
+//avall:=avall+t3;
+//av6502:=av6502+time6502;
+avsct1[c1]:=tim;
+avspt1[c1]:=ts;
+sidtime1[c1]:=sidtime;
+av65021[c1]:=time6502;
+avsct:=0; for i:=0 to 59 do avsct+=avsct1[i]; avsct:=round(avsct/60);
+avspt:=0; for i:=0 to 59 do avspt+=avspt1[i]; avspt:=round(avspt/60);
+avall:=0; for i:=0 to 59 do avall+=sidtime1[i]; avall:=round(avall/60);
+av6502:=0; for i:=0 to 59 do av6502+=av65021[i]; av6502:=round(av6502/60);
+
 box2(10,1062,1782,1110,118);
 outtextxyz(32,1070,'Times: ',44,2,2);
-outtextxyz(144,1070,'screen '+inttostr(round(avsct/c))+' us',44,2,2);
-outtextxyz(400,1070,'sprites '+inttostr(round(avspt/c))+' us',186,2,2);
-if sidcount<>0 then outtextxyz(656,1070,'SID '+inttostr(round(sidtime/sidcount))+' us',233,2,2);
-outtextxyz(880,1070,'6502 '+floattostrf((time6502/16),fffixed,4,1)+' us',124,2,2);
+//outtextxyz(144,1070,'screen '+inttostr(round(avsct/c))+' us',44,2,2);
+//outtextxyz(400,1070,'sprites '+inttostr(round(avspt/c))+' us',186,2,2);
+//if sidcount<>0 then outtextxyz(656,1070,'SID '+inttostr(round(sidtime/sidcount))+' us',233,2,2);
+outtextxyz(144,1070,'screen '+inttostr(avsct)+' us',44,2,2);
+outtextxyz(400,1070,'sprites '+inttostr(avspt)+' us',186,2,2);
+if sidcount<>0 then outtextxyz(656,1070,'SID '+inttostr(avall)+' us',233,2,2);
+outtextxyz(880,1070,'6502 '+floattostrf((av6502/16),fffixed,4,1)+' us',124,2,2);
 if peek($70003)=1 then outtextxyz(1540,1070,inttostr(peek($d404)shr 4),108,2,2);
 if peek($70004)=1 then outtextxyz(1580,1070,inttostr(peek($d40b)shr 4),200,2,2);
 if peek($70005)=1 then outtextxyz(1620,1070,inttostr(peek($d412)shr 4),40,2,2);

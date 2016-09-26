@@ -11,11 +11,27 @@
 
 // Retromachine memory map @bytes   NEW!
 
-//$   00000-$    0FFFF reserved
-//    0D400-     0D418 SID
-//$   10000-$    4FFFF pallette banks;
-//$   50000-$    50FFF 8x16 font
-//$   51000-$    51FFF 8x8 fonts x2
+//    00000-     0FFFF 6502 standard area
+
+//------Hardware registers
+
+//      0D000- blitter/copper
+//             0D000 - frame counter
+//             0D004 - display start addr >> 8
+//             0D008 - graphic mode: bbyyxx00 bb: bpp 4/8/14/32
+//                                 yy,xx: zoom x1,x2,x4,x8
+//             0D00C - border color
+//             0D010 - pallette bank
+//             0D014 - horizontal pallette selector  bit 31 on, 30..20 add to $18004, 11:0 pixel num.
+//             0D018 - display list start addr
+//             0D01C - horizontal scroll right register
+
+//      0D400-     0D418 SID
+//      0E000-     0FFFF OS ROM
+//        0E000-0E7FF font defs
+//    10000-     4FFFF pallette banks;
+//    50000-     50FFF 8x16 font
+//    51000-     51FFF 8x8 fonts x2
 //    52000-     59FFF sprite defs 8x4k
 //    5A000-     5AFFF audio buffer 4k
 //    5B000-     5FFFF reserved
@@ -550,10 +566,17 @@ else
 end;
 
 
- procedure scrconvert16f(screen:pointer);  //convert retro fb to raspberry fb @ graphics mode 16
-                                           //1792x1120x256
+ procedure scrconvertdl(screen:pointer);  //convert retro fb to raspberry fb using display list
 
- // todo: one screen convert procedure with display list
+
+// dl: ccdd_yyxx
+// cc - 00:blank, 01 int 10 line 11 cmd
+// cc=11: 000001 end of dl /reload
+// 1xxxxx goto 37 bit addr << 3
+// 000000 nop (padding for goto)
+// 000010 load display address << 8
+// 000100 16bit move (reg,value)
+
 
  var a:pointer;
      e:integer;
@@ -650,6 +673,108 @@ end;
  p999:           ldmfd r13!,{r0-r12}
                  end;
  end;
+
+
+procedure scrconvert16f(screen:pointer);  //convert retro fb to raspberry fb @ graphics mode 16
+                                          //1792x1120x256
+
+// todo: one screen convert procedure with display list
+
+var a:pointer;
+    e:integer;
+
+label p1,p0,p002,p10,p11,p12,p20,p21,p22,p100,p101,p102,p103,p104,p999;
+
+begin
+a:=ramb;
+e:=raml^[$18003];
+
+                asm
+                stmfd r13!,{r0-r12}   //Push registers
+                ldr r1,a
+                add r1,#0x1000000
+                mov r6,r1
+                add r6,#1
+                ldr r2,screen
+                mov r12,r2
+                add r12,#4
+                ldr r3,a
+                add r3,#0x10000
+                mov r5,r2
+                                    //upper border
+                add r5,#307200
+                ldr r9,e
+                mov r10,r9
+p10:            str r9,[r2],#8
+                str r10,[r12],#8
+                str r9,[r2],#8
+                str r10,[r12],#8
+                cmp r2,r5
+                blt p10
+                mov r0,#1120
+                                    //left border
+p11:            add r5,#256
+                ldr r9,e
+                mov r10,r9
+p0:             str r9,[r2],#8
+                str r10,[r12],#8
+                str r9,[r2],#8
+                str r10,[r12],#8
+                cmp r2,r5
+                blt p0
+                                    //active screen
+                add r5,#7168
+p1:             ldrb r7,[r1],#2
+                ldrb r8,[r6],#2
+                ldr r9,[r3,r7,lsl #2]
+                ldr r10,[r3,r8,lsl #2]
+                str r9,[r2],#8
+                str r10,[r12],#8
+                ldrb r7,[r1],#2
+                ldrb r8,[r6],#2
+                ldr r9,[r3,r7,lsl #2]
+                ldr r10,[r3,r8,lsl #2]
+                str r9,[r2],#8
+                str r10,[r12],#8
+                ldrb r7,[r1],#2
+                ldrb r8,[r6],#2
+                ldr r9,[r3,r7,lsl #2]
+                ldr r10,[r3,r8,lsl #2]
+                str r9,[r2],#8
+                str r10,[r12],#8
+                ldrb r7,[r1],#2
+                ldrb r8,[r6],#2
+                ldr r9,[r3,r7,lsl #2]
+                ldr r10,[r3,r8,lsl #2]
+                str r9,[r2],#8
+                str r10,[r12],#8
+                cmp r2,r5
+                blt p1
+                                  //right border
+                add r5,#256
+                ldr r9,e
+                mov r10,r9
+p002:           str r9,[r2],#8
+                str r10,[r12],#8
+                str r9,[r2],#8
+                str r10,[r12],#8
+                cmp r2,r5
+                blt p002
+                subs r0,#1
+                bne p11
+                                  //lower border
+                add r5,#307200
+                ldr r9,e
+                mov r10,r9
+p12:            str r9,[r2],#8
+                str r10,[r12],#8
+                str r9,[r2],#8
+                str r10,[r12],#8
+                cmp r2,r5
+                blt p12
+p999:           ldmfd r13!,{r0-r12}
+                end;
+end;
 
 procedure scrconvert20f(screen:pointer);  // convert retro fb to raspberry fb @ graphics mode 20
                                           // 1792x1120x64k
@@ -1606,7 +1731,7 @@ repeat
 
                ldr   r0,[r4,#0x20]
                ldr   r3,[r4,#0x00]
-               adds  r0,r0,r3,lsl #6//8    // PA @ 24 higher bits
+               adds  r0,r0,r3,lsl #5//8    // PA @ 24 higher bits
                ldrcs r1,[r4,#0x60]
                ldrcs r2,[r4,#0x50]
                andcs r1,r2
@@ -1617,7 +1742,7 @@ repeat
                str r0,[r4,#0x20]
 
                ldr r2,[r4,#0x24]
-               adds r2,r2,r3,lsl #10//12
+               adds r2,r2,r3,lsl #9//12
                movcs r1,#1
                movcc r1,#0
                str   r2,[r4,#0x24]
@@ -1735,7 +1860,7 @@ p209:          cmp r1,#8                // noise
 
 p204:          ldr   r0,[r4,#0x60]
                ldr   r3,[r4,#0x40]
-               adds  r0,r0,r3,lsl #6//8    // PA @ 24 higher bits
+               adds  r0,r0,r3,lsl #5//8    // PA @ 24 higher bits
                ldrcs r1,[r4,#0xa0]
                ldrcs r2,[r4,#0x90]
                andcs r1,r2
@@ -1746,7 +1871,7 @@ p204:          ldr   r0,[r4,#0x60]
                str r0,[r4,#0x60]
 
                ldr r2, [r4,#0x64]
-               adds r2,r2,r3,lsl #10//12
+               adds r2,r2,r3,lsl #9//12
                movcs r1,#1
                movcc r1,#0
                str  r2,[r4,#0x64]
@@ -1866,7 +1991,7 @@ p212:          ldr r7,[r4,#0x7C]
 
 p214:          ldr   r0,[r4,#0xa0]
                ldr   r3,[r4,#0x80]
-               adds  r0,r0,r3,lsl #6//8    // PA @ 24 higher bits
+               adds  r0,r0,r3,lsl #5//8    // PA @ 24 higher bits
                ldrcs r1,[r4,#0x20]
                ldrcs r2,[r4,#0x10]
                andcs r1,r2
@@ -1877,7 +2002,7 @@ p214:          ldr   r0,[r4,#0xa0]
                str r0,[r4,#0xa0]
 
                ldr r2,[r4,#0xa4]
-               adds r2,r2,r3,lsl #10//12
+               adds r2,r2,r3,lsl #9//12
                movcs r1,#1
                movcc r1,#0
                str   r2,[r4,#0xa4]
@@ -2045,7 +2170,7 @@ p224:          ldr r0,[r4,#0x30]
                mov r7,r4
                ldr r3,[r7,#0x1bc] //fri
                ldr r1,[r7,#0x1b8] //ffi
- lsl r1,#2
+ lsl r1,#1
                ldr r6,[r7,#0x1b4]  // bandpass switch
                mov r9, #0  // init output L
                mov r10,#0  // init output R
@@ -2174,7 +2299,7 @@ p224:          ldr r0,[r4,#0x30]
 
                //  antialias r
 
-               mov r1,#0x8000
+               mov r1,#0x6000
                ldr r2,[r7,#0x198]
                sub r0,r2
                ldr r4,[r7,#0x19c]
@@ -2192,8 +2317,8 @@ p224:          ldr r0,[r4,#0x30]
 
                ldr r0,[r7,#0x1a8]
                ldr r8,[r7,#0x1b0]
-               cmp r0,#5//20
-               addlt r8,r4
+      //         cmp r0,#5//20
+               add r8,r4
                str r8,[r7,#0x1b0]
 
                //  antialias l
@@ -2216,8 +2341,8 @@ p224:          ldr r0,[r4,#0x30]
 
                ldr r0,[r7,#0x1a8]
                ldr r8,[r7,#0x1ac]
-               cmps r0,#5//20
-               addlt r8,r4
+        //       cmps r0,#10//20
+               add r8,r4       //lt
                str r8,[r7,#0x1ac]
                add r0,#1
                str r0,[r7,#0x1a8]
@@ -2225,11 +2350,11 @@ p224:          ldr r0,[r4,#0x30]
 
                end;
 
-sidclock+=4000;//1000;
+sidclock+=2000;//1000;
 until sidclock>=20000;//20526;
 sidclock-=20000;//20526;
-sid[0]:= siddata[$6c] div 8192;//32768;
-sid[1]:=siddata[$6b] div 8192;//32768;
+sid[0]:= siddata[$6c] div 16384;//32768;
+sid[1]:=siddata[$6b] div 16384;//32768;
 oldsc:=sc;
 sc:=sid[0]+sid[1];
 scope[scj div 1]:=sc; inc(scj); if scj>1*959 then if (oldsc<0) and (sc>0) then scj:=0 else scj:=1*959;
@@ -2367,7 +2492,8 @@ for k:=0 to 7 do
     end;
   end;
 inc(sidcount);
-sidtime+=gettime-t;
+//sidtime+=gettime-t;
+sidtime:=gettime-t;
 end;
 
 
